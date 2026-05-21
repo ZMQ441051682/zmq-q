@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZMQ_Q · 游戏 CG 艺术</title>
+<style>
+/* ─── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --clr-bg:        #111318;
+  --clr-bg2:       #16191f;
+  --clr-bg3:       #1c2028;
+  --clr-text:      #e8e6e0;
+  --clr-muted:     #7a7870;
+  --clr-faint:     #343640;
+  --clr-orange:    #c8612a;
+  --clr-orange-lt: #e0844a;
+  --clr-cyan:      #2ab8c8;
+  --clr-cyan-lt:   #50d0df;
+  --clr-line:      rgba(255,255,255,0.06);
+  --font-sans:     'PingFang SC','Helvetica Neue',Arial,sans-serif;
+  --font-mono:     'SF Mono','Fira Code',monospace;
+  --ease-out:      cubic-bezier(0.16,1,0.3,1);
+}
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--clr-cyan); color: #000; }
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--clr-bg); }
+::-webkit-scrollbar-thumb { background: var(--clr-faint); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--clr-cyan); }
+
+/* ─── Nav ───────────────────────────────────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 60px; height: 64px;
+  background: transparent;
+  transition: background 0.5s var(--ease-out), backdrop-filter 0.5s;
+}
+nav.scrolled {
+  background: rgba(17,19,24,0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--clr-line);
+}
+.nav-logo {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  color: var(--clr-text);
+  text-decoration: none;
+  display: flex; align-items: center; gap: 8px;
+}
+.nav-logo .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--clr-orange); display: inline-block; }
+.nav-links { display: flex; gap: 36px; list-style: none; }
+.nav-links a {
+  font-size: 13px; letter-spacing: 0.08em; color: var(--clr-muted);
+  text-decoration: none; transition: color 0.3s;
+  position: relative;
+}
+.nav-links a::after {
+  content: ''; position: absolute; bottom: -3px; left: 0; width: 0; height: 1px;
+  background: var(--clr-cyan); transition: width 0.3s var(--ease-out);
+}
+.nav-links a:hover { color: var(--clr-text); }
+.nav-links a:hover::after { width: 100%; }
+
+/* ─── Hero ──────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative; width: 100%; height: 100vh;
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+/* Video container */
+.hero-video-wrap {
+  position: absolute; inset: 0; z-index: 0;
+}
+.hero-video-wrap video {
+  width: 100%; height: 100%; object-fit: cover;
+}
+/* Canvas fallback / overlay animation */
+#heroCanvas {
+  position: absolute; inset: 0; z-index: 1;
+  width: 100%; height: 100%;
+}
+.hero-overlay {
+  position: absolute; inset: 0; z-index: 2;
+  background: linear-gradient(to bottom,
+    rgba(17,19,24,0.3) 0%,
+    rgba(17,19,24,0.05) 40%,
+    rgba(17,19,24,0.05) 60%,
+    rgba(17,19,24,0.85) 100%
+  );
+}
+.hero-content {
+  position: relative; z-index: 3;
+  text-align: center; padding: 0 40px;
+  transform: translateY(20px); opacity: 0;
+  animation: heroIn 1.2s 0.8s var(--ease-out) forwards;
+}
+@keyframes heroIn {
+  to { transform: translateY(0); opacity: 1; }
+}
+.hero-tag {
+  display: inline-block;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em;
+  color: var(--clr-cyan); border: 1px solid rgba(42,184,200,0.35);
+  padding: 5px 14px; border-radius: 2px; margin-bottom: 28px;
+  text-transform: uppercase;
+}
+.hero-title {
+  font-size: clamp(54px, 8vw, 96px);
+  font-weight: 700; letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--clr-text);
+}
+.hero-title span { color: var(--clr-orange); }
+.hero-sub {
+  margin-top: 20px; font-size: 15px; color: var(--clr-muted);
+  letter-spacing: 0.06em; font-weight: 300;
+}
+.hero-scroll-hint {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  z-index: 3; display: flex; flex-direction: column; align-items: center;
+  gap: 8px; opacity: 0; animation: heroIn 1s 2s ease forwards;
+}
+.hero-scroll-hint span {
+  font-size: 10px; letter-spacing: 0.2em; color: var(--clr-muted);
+  text-transform: uppercase;
+}
+.scroll-line {
+  width: 1px; height: 48px; background: var(--clr-faint);
+  position: relative; overflow: hidden;
+}
+.scroll-line::after {
+  content: ''; position: absolute; top: -100%;
+  left: 0; width: 100%; height: 100%;
+  background: var(--clr-cyan);
+  animation: scrollDrop 1.8s ease-in-out infinite;
+}
+@keyframes scrollDrop {
+  0% { top: -100%; }
+  100% { top: 100%; }
+}
+
+/* ─── Section Base ──────────────────────────────────────────────────────── */
+section { padding: 140px 60px; max-width: 1280px; margin: 0 auto; }
+.section-label {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em;
+  color: var(--clr-orange); text-transform: uppercase; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-label::before {
+  content: ''; display: block; width: 28px; height: 1px; background: var(--clr-orange);
+}
+.section-title {
+  font-size: clamp(32px, 4vw, 52px); font-weight: 700;
+  letter-spacing: -0.02em; line-height: 1.1;
+  margin-bottom: 80px;
+}
+.section-title em { font-style: normal; color: var(--clr-cyan); }
+
+/* ─── Divider ───────────────────────────────────────────────────────────── */
+.divider {
+  width: 100%; height: 1px; background: var(--clr-line);
+  margin: 0; position: relative; overflow: hidden;
+}
+.divider::after {
+  content: ''; position: absolute; top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, var(--clr-cyan), transparent);
+  animation: shimmer 4s ease-in-out infinite;
+}
+@keyframes shimmer { 0%,100% { left: -100%; } 50% { left: 140%; } }
+
+/* ─── Works Gallery ─────────────────────────────────────────────────────── */
+#works { padding-top: 120px; max-width: 100%; }
+#works > .inner { max-width: 1280px; margin: 0 auto; padding: 0 60px; }
+.work-item {
+  display: grid; grid-template-columns: 1fr 420px;
+  gap: 0; min-height: 500px; border-top: 1px solid var(--clr-line);
+  overflow: hidden; position: relative;
+}
+.work-item:last-child { border-bottom: 1px solid var(--clr-line); }
+.work-img-wrap {
+  position: relative; overflow: hidden; cursor: pointer;
+  background: var(--clr-bg2);
+}
+.work-img-wrap img, .work-img-wrap object {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transform: scale(1.04);
+  transition: transform 0.9s var(--ease-out);
+}
+.work-img-wrap:hover img, .work-img-wrap:hover object { transform: scale(1); }
+.work-img-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(200,97,42,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+.work-info {
+  padding: 64px 56px;
+  display: flex; flex-direction: column; justify-content: center;
+  border-left: 1px solid var(--clr-line);
+  background: var(--clr-bg);
+}
+.work-index {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.15em;
+  color: var(--clr-faint); margin-bottom: 20px;
+}
+.work-name {
+  font-size: 26px; font-weight: 600; letter-spacing: -0.01em;
+  line-height: 1.2; margin-bottom: 16px;
+}
+.work-name span { color: var(--clr-orange); }
+.work-tags {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px;
+}
+.work-tag {
+  font-size: 11px; letter-spacing: 0.1em; color: var(--clr-cyan);
+  border: 1px solid rgba(42,184,200,0.25); padding: 3px 10px; border-radius: 2px;
+}
+.work-desc {
+  font-size: 14px; line-height: 1.85; color: var(--clr-muted);
+  max-width: 320px; font-weight: 300;
+}
+.work-line {
+  width: 32px; height: 2px; background: var(--clr-orange);
+  margin-top: 32px; border-radius: 1px;
+  transition: width 0.5s var(--ease-out);
+}
+.work-item:hover .work-line { width: 60px; }
+
+/* ─── Video Works ───────────────────────────────────────────────────────── */
+#videos { padding-top: 120px; max-width: 1280px; margin: 0 auto; padding-left: 60px; padding-right: 60px; }
+.videos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: auto auto;
+  gap: 2px;
+}
+.video-card {
+  position: relative; overflow: hidden; cursor: pointer;
+  background: var(--clr-bg2); aspect-ratio: 16/9;
+}
+.video-card:first-child {
+  grid-column: 1 / -1; aspect-ratio: 21/9;
+}
+.video-card img, .video-card object {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform 0.8s var(--ease-out), filter 0.5s;
+  filter: brightness(0.85) saturate(0.9);
+}
+.video-card:hover img, .video-card:hover object {
+  transform: scale(1.04); filter: brightness(0.95) saturate(1.05);
+}
+.video-card-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(17,19,24,0.8) 0%, transparent 50%);
+  pointer-events: none;
+}
+.video-card-info {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 24px 28px 20px;
+  transform: translateY(8px); opacity: 0;
+  transition: transform 0.5s var(--ease-out), opacity 0.4s;
+}
+.video-card:hover .video-card-info { transform: translateY(0); opacity: 1; }
+/* Always show on first card */
+.video-card:first-child .video-card-info { transform: none; opacity: 1; }
+.video-card-num {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
+  color: var(--clr-orange); margin-bottom: 6px;
+}
+.video-card-title {
+  font-size: 18px; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--clr-text); margin-bottom: 4px;
+}
+.video-card-sub {
+  font-size: 12px; color: var(--clr-muted); letter-spacing: 0.06em;
+}
+/* Play button -->*/
+.play-btn {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.07);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.4s var(--ease-out);
+  backdrop-filter: blur(4px);
+  opacity: 0.7;
+}
+.video-card:hover .play-btn { opacity: 1; transform: translate(-50%, -50%) scale(1.1); background: rgba(200,97,42,0.2); border-color: var(--clr-orange); }
+.play-btn svg { margin-left: 4px; }
+
+/* Video modal -->*/
+.video-modal {
+  display: none; position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.9); backdrop-filter: blur(12px);
+  align-items: center; justify-content: center;
+}
+.video-modal.open { display: flex; }
+.video-modal-inner {
+  position: relative; width: 90vw; max-width: 1100px;
+  background: var(--clr-bg2); border: 1px solid var(--clr-line);
+}
+.video-modal-inner video, .video-modal-inner .video-placeholder {
+  width: 100%; aspect-ratio: 16/9; display: block;
+  background: #000; object-fit: contain;
+}
+.video-placeholder {
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px;
+  color: var(--clr-muted); font-size: 13px; letter-spacing: 0.08em;
+}
+.video-placeholder .ph-icon { font-size: 32px; opacity: 0.4; }
+.video-modal-close {
+  position: absolute; top: -48px; right: 0;
+  width: 40px; height: 40px; border: 1px solid var(--clr-line);
+  background: transparent; cursor: pointer; color: var(--clr-text);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; transition: all 0.3s;
+}
+.video-modal-close:hover { border-color: var(--clr-orange); color: var(--clr-orange); }
+.video-modal-info { padding: 20px 28px; border-top: 1px solid var(--clr-line); }
+.video-modal-info h3 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+.video-modal-info p { font-size: 13px; color: var(--clr-muted); }
+.video-file-hint {
+  font-size: 11px; color: var(--clr-cyan); letter-spacing: 0.08em;
+  margin-top: 8px; display: flex; align-items: center; gap: 6px;
+}
+.video-file-hint::before { content: ''; display: block; width: 8px; height: 1px; background: var(--clr-cyan); }
+
+/* ─── Slogan ────────────────────────────────────────────────────────────── */
+#slogan {
+  min-height: 80vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 120px 60px;
+  position: relative; overflow: hidden;
+}
+.slogan-bg-text {
+  position: absolute; font-size: clamp(80px, 14vw, 180px);
+  font-weight: 800; letter-spacing: 0.05em;
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.03);
+  user-select: none; white-space: nowrap;
+  top: 50%; transform: translateY(-50%);
+}
+.slogan-text {
+  position: relative; z-index: 1;
+  font-size: clamp(28px, 4vw, 52px); font-weight: 700;
+  line-height: 1.25; letter-spacing: -0.02em;
+  max-width: 800px;
+}
+.slogan-text .line-orange { color: var(--clr-orange); display: block; }
+.slogan-text .line-cyan { color: var(--clr-cyan); }
+.slogan-en {
+  margin-top: 32px; font-family: var(--font-mono); font-size: 13px;
+  color: var(--clr-muted); letter-spacing: 0.16em;
+  text-transform: uppercase; position: relative; z-index: 1;
+}
+.slogan-line {
+  width: 1px; height: 60px; background: var(--clr-faint);
+  margin: 40px auto 0; position: relative; z-index: 1;
+}
+
+/* ─── Contact / Footer ──────────────────────────────────────────────────── */
+#contact {
+  padding: 100px 60px;
+  max-width: 1280px; margin: 0 auto;
+}
+.contact-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+  align-items: start;
+}
+.contact-left h2 {
+  font-size: clamp(28px, 3.5vw, 46px); font-weight: 700;
+  letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 24px;
+}
+.contact-left h2 span { color: var(--clr-orange); }
+.contact-left p {
+  font-size: 14px; color: var(--clr-muted); line-height: 1.8;
+  max-width: 360px; font-weight: 300;
+}
+.contact-right { padding-top: 8px; }
+.contact-items { display: flex; flex-direction: column; gap: 0; }
+.contact-item {
+  display: flex; align-items: center; gap: 20px;
+  padding: 20px 0; border-bottom: 1px solid var(--clr-line);
+  text-decoration: none; color: var(--clr-text);
+  transition: all 0.3s;
+  position: relative;
+}
+.contact-item::after {
+  content: '↗'; position: absolute; right: 0;
+  font-size: 14px; color: var(--clr-orange); opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.3s var(--ease-out);
+}
+.contact-item:hover { color: var(--clr-text); padding-left: 8px; }
+.contact-item:hover::after { opacity: 1; transform: translateY(0); }
+.contact-icon {
+  width: 40px; height: 40px; border-radius: 4px;
+  border: 1px solid var(--clr-faint); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.3s, background 0.3s;
+}
+.contact-item:hover .contact-icon {
+  border-color: var(--clr-orange);
+  background: rgba(200,97,42,0.08);
+}
+.contact-label { font-size: 11px; letter-spacing: 0.12em; color: var(--clr-muted); text-transform: uppercase; }
+.contact-value { font-size: 13px; letter-spacing: 0.04em; color: var(--clr-text); margin-top: 2px; }
+/* Wechat special (not a link, just display) -->*/
+.contact-wechat {
+  display: flex; align-items: center; gap: 20px;
+  padding: 20px 0; border-bottom: 1px solid var(--clr-line);
+}
+
+/* ─── Footer bar ────────────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--clr-line);
+  padding: 28px 60px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-left {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--clr-muted); letter-spacing: 0.1em;
+}
+.footer-right {
+  font-size: 11px; color: var(--clr-faint); letter-spacing: 0.06em;
+}
+
+/* ─── Scroll-triggered fade-up ──────────────────────────────────────────── */
+.reveal {
+  opacity: 0; transform: translateY(36px);
+  transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.22s; }
+.reveal-delay-3 { transition-delay: 0.36s; }
+
+/* ─── Cursor dot ────────────────────────────────────────────────────────── */
+.cursor-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--clr-orange); position: fixed; z-index: 9999;
+  pointer-events: none; transform: translate(-50%, -50%);
+  transition: transform 0.1s, opacity 0.3s;
+  mix-blend-mode: normal;
+}
+.cursor-ring {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid rgba(42,184,200,0.5); position: fixed; z-index: 9998;
+  pointer-events: none; transform: translate(-50%, -50%);
+  transition: transform 0.18s var(--ease-out), width 0.3s, height 0.3s, border-color 0.3s;
+}
+body:has(a:hover) .cursor-ring, body:has(.video-card:hover) .cursor-ring {
+  width: 48px; height: 48px; border-color: var(--clr-orange);
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  nav { padding: 0 24px; }
+  .nav-links { display: none; }
+  section { padding: 80px 24px; }
+  #works > .inner { padding: 0 24px; }
+  .work-item { grid-template-columns: 1fr; }
+  .work-info { border-left: none; border-top: 1px solid var(--clr-line); padding: 40px 24px; }
+  .videos-grid { grid-template-columns: 1fr; }
+  .video-card:first-child { grid-column: 1; }
+  .contact-grid { grid-template-columns: 1fr; gap: 48px; }
+  footer { padding: 24px; flex-direction: column; gap: 12px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- ─── Nav ──────────────────────────────────────────────────────────────── -->
+<nav id="mainNav">
+  <a href="#" class="nav-logo">
+    <span class="dot"></span>ZMQ_Q
+  </a>
+  <ul class="nav-links">
+    <li><a href="#works">作品</a></li>
+    <li><a href="#videos">影像</a></li>
+    <li><a href="#contact">联系</a></li>
+  </ul>
+</nav>
+
+<!-- ─── Hero ─────────────────────────────────────────────────────────────── -->
+<section class="hero" id="hero">
+  <!-- Video container — replace src with your own video file -->
+  <div class="hero-video-wrap" id="heroVideoWrap">
+    <video id="heroVideo" autoplay muted loop playsinline
+      src="" 
+      poster="">
+    </video>
+  </div>
+  <!-- Canvas animation (shows when no video src) -->
+  <canvas id="heroCanvas"></canvas>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-tag">Game CG Artist · 游戏 CG 创作者</div>
+    <h1 class="hero-title">ZMQ_<span>Q</span></h1>
+    <p class="hero-sub">用光与影，讲述无尽世界的传说</p>
+  </div>
+  <div class="hero-scroll-hint">
+    <span>向下探索</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── Works ─────────────────────────────────────────────────────────────── -->
+<div id="works">
+  <div class="inner">
+    <section style="padding: 120px 0 60px; max-width: none;">
+      <div class="section-label reveal">静态作品</div>
+      <h2 class="section-title reveal reveal-delay-1">用画面<em>定格</em>史诗时刻</h2>
+    </section>
+  </div>
+
+  <!-- Work 1 -->
+  <div class="work-item reveal">
+    <div class="work-img-wrap">
+      <object data="assets/images/cg_work_1.svg" type="image/svg+xml">
+        <img src="assets/images/cg_work_1.svg" alt="赛博武者">
+      </object>
+      <div class="work-img-overlay"></div>
+    </div>
+    <div class="work-info">
+      <div class="work-index">001 / 003</div>
+      <h3 class="work-name">赛博<span>武者</span></h3>
+      <div class="work-tags">
+        <span class="work-tag">赛博朋克</span>
+        <span class="work-tag">角色设计</span>
+        <span class="work-tag">动态光效</span>
+      </div>
+      <p class="work-desc">
+        在霓虹与钢铁交织的未来都市，一名身披电磁甲胄的战士独立于暗夜。冷蓝的能量剑与橙色炙热的火焰刃，在寂静中对峙——这是一场关于秩序与混沌的沉默宣言。
+      </p>
+      <div class="work-line"></div>
+    </div>
+  </div>
+
+  <!-- Work 2 -->
+  <div class="work-item reveal">
+    <div class="work-img-wrap">
+      <object data="assets/images/cg_work_2.svg" type="image/svg+xml">
+        <img src="assets/images/cg_work_2.svg" alt="幽冥法师">
+      </object>
+      <div class="work-img-overlay"></div>
+    </div>
+    <div class="work-info">
+      <div class="work-index">002 / 003</div>
+      <h3 class="work-name">幽冥<span>法师</span></h3>
+      <div class="work-tags">
+        <span class="work-tag">奇幻</span>
+        <span class="work-tag">魔法结界</span>
+        <span class="work-tag">光粒特效</span>
+      </div>
+      <p class="work-desc">
+        暗紫色的虚空结界在脚下展开，召唤阵古老而精密。橙色烈焰在眼眶中燃烧，是力量，也是代价。她站在生死之间的边界，宇宙的秘密在指尖流淌。
+      </p>
+      <div class="work-line"></div>
+    </div>
+  </div>
+
+  <!-- Work 3 -->
+  <div class="work-item reveal">
+    <div class="work-img-wrap">
+      <object data="assets/images/cg_work_3.svg" type="image/svg+xml">
+        <img src="assets/images/cg_work_3.svg" alt="钢铁龙骑">
+      </object>
+      <div class="work-img-overlay"></div>
+    </div>
+    <div class="work-info">
+      <div class="work-index">003 / 003</div>
+      <h3 class="work-name">钢铁<span>龙骑</span></h3>
+      <div class="work-tags">
+        <span class="work-tag">科幻机甲</span>
+        <span class="work-tag">龙与骑士</span>
+        <span class="work-tag">冰火对决</span>
+      </div>
+      <p class="work-desc">
+        裂空而降的远古火龙在身后盘旋，骑士纹丝不动，冰矛直指苍穹。金属与鳞片的史诗对话，在破晓前最深的黑暗中，刻写进传说。
+      </p>
+      <div class="work-line"></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ─── Videos ────────────────────────────────────────────────────────────── -->
+<section id="videos" style="padding: 120px 60px; max-width: 1280px; margin: 0 auto;">
+  <div class="section-label reveal">影像作品</div>
+  <h2 class="section-title reveal reveal-delay-1">动态<em>史诗</em></h2>
+</section>
+
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 60px 140px; box-sizing: border-box;">
+  <div class="videos-grid">
+
+    <!-- Card 1 — featured wide -->
+    <div class="video-card reveal" data-video-idx="1" data-title="暗影裂缝" data-desc="Shadow Rift — 系列第一章·觉醒。深渊之中，裂缝初现，命运的齿轮开始转动。">
+      <object data="assets/images/video_thumb_1.svg" type="image/svg+xml" style="pointer-events:none;">
+        <img src="assets/images/video_thumb_1.svg" alt="暗影裂缝">
+      </object>
+      <div class="video-card-overlay"></div>
+      <div class="play-btn">
+        <svg width="16" height="18" viewBox="0 0 16 18" fill="none">
+          <path d="M2 1.5L14 9L2 16.5V1.5Z" fill="white" fill-opacity="0.85"/>
+        </svg>
+      </div>
+      <div class="video-card-info">
+        <div class="video-card-num">EPISODE 01 · 暗影系列</div>
+        <div class="video-card-title">暗影裂缝 · Shadow Rift</div>
+        <div class="video-card-sub">系列第一章 — 觉醒</div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="video-card reveal reveal-delay-1" data-video-idx="2" data-title="烈焰协议" data-desc="Flame Protocol — 系列第二章·燃烧。当协议失效，只剩下焰火与意志的较量。">
+      <object data="assets/images/video_thumb_2.svg" type="image/svg+xml" style="pointer-events:none;">
+        <img src="assets/images/video_thumb_2.svg" alt="烈焰协议">
+      </object>
+      <div class="video-card-overlay"></div>
+      <div class="play-btn">
+        <svg width="16" height="18" viewBox="0 0 16 18" fill="none">
+          <path d="M2 1.5L14 9L2 16.5V1.5Z" fill="white" fill-opacity="0.85"/>
+        </svg>
+      </div>
+      <div class="video-card-info">
+        <div class="video-card-num">EPISODE 02 · 烈焰系列</div>
+        <div class="video-card-title">烈焰协议 · Flame Protocol</div>
+        <div class="video-card-sub">系列第二章 — 燃烧</div>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="video-card reveal reveal-delay-2" data-video-idx="3" data-title="虚空行者" data-desc="Void Walker — 系列第三章·堕落。她踏入维度的缝隙，再也没有回头的路。">
+      <object data="assets/images/video_thumb_3.svg" type="image/svg+xml" style="pointer-events:none;">
+        <img src="assets/images/video_thumb_3.svg" alt="虚空行者">
+      </object>
+      <div class="video-card-overlay"></div>
+      <div class="play-btn">
+        <svg width="16" height="18" viewBox="0 0 16 18" fill="none">
+          <path d="M2 1.5L14 9L2 16.5V1.5Z" fill="white" fill-opacity="0.85"/>
+        </svg>
+      </div>
+      <div class="video-card-info">
+        <div class="video-card-num">EPISODE 03 · 虚空系列</div>
+        <div class="video-card-title">虚空行者 · Void Walker</div>
+        <div class="video-card-sub">系列第三章 — 堕落</div>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="video-card reveal reveal-delay-1" data-video-idx="4" data-title="钢铁安魂" data-desc="Iron Requiem — 系列第四章·终焉。铠甲碎裂，但意志永不消逝。">
+      <object data="assets/images/video_thumb_4.svg" type="image/svg+xml" style="pointer-events:none;">
+        <img src="assets/images/video_thumb_4.svg" alt="钢铁安魂">
+      </object>
+      <div class="video-card-overlay"></div>
+      <div class="play-btn">
+        <svg width="16" height="18" viewBox="0 0 16 18" fill="none">
+          <path d="M2 1.5L14 9L2 16.5V1.5Z" fill="white" fill-opacity="0.85"/>
+        </svg>
+      </div>
+      <div class="video-card-info">
+        <div class="video-card-num">EPISODE 04 · 钢铁系列</div>
+        <div class="video-card-title">钢铁安魂 · Iron Requiem</div>
+        <div class="video-card-sub">系列第四章 — 终焉</div>
+      </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="video-card reveal reveal-delay-2" data-video-idx="5" data-title="最后一战" data-desc="Last Stand — 终章·传承。所有的光，在此刻汇聚。">
+      <object data="assets/images/video_thumb_5.svg" type="image/svg+xml" style="pointer-events:none;">
+        <img src="assets/images/video_thumb_5.svg" alt="最后一战">
+      </object>
+      <div class="video-card-overlay"></div>
+      <div class="play-btn">
+        <svg width="16" height="18" viewBox="0 0 16 18" fill="none">
+          <path d="M2 1.5L14 9L2 16.5V1.5Z" fill="white" fill-opacity="0.85"/>
+        </svg>
+      </div>
+      <div class="video-card-info">
+        <div class="video-card-num">FINALE · 终章</div>
+        <div class="video-card-title">最后一战 · Last Stand</div>
+        <div class="video-card-sub">终章 — 传承</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Video Modal -->
+<div class="video-modal" id="videoModal">
+  <div class="video-modal-inner">
+    <button class="video-modal-close" id="modalClose">✕</button>
+    <video id="modalVideo" controls style="width:100%;aspect-ratio:16/9;background:#000;display:block;">
+    </video>
+    <div class="video-placeholder" id="modalPlaceholder" style="display:none;aspect-ratio:16/9;">
+      <div class="ph-icon">▶</div>
+      <div style="text-align:center;">
+        <div style="font-size:15px;color:#e8e6e0;margin-bottom:6px;" id="modalTitle">作品标题</div>
+        <div style="font-size:12px;" id="modalDesc">作品描述</div>
+      </div>
+    </div>
+    <div class="video-modal-info">
+      <h3 id="modalInfoTitle">—</h3>
+      <p id="modalInfoDesc">—</p>
+      <div class="video-file-hint">将视频文件放入 <code style="background:rgba(42,184,200,0.1);padding:2px 6px;border-radius:2px;font-size:11px;">assets/videos/</code> 目录并修改 src 属性即可播放</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ─── Slogan ────────────────────────────────────────────────────────────── -->
+<section id="slogan">
+  <div class="slogan-bg-text">ZMQ_Q</div>
+  <div class="slogan-text reveal">
+    <span class="line-orange">每一帧画面，都是一场无声的战争；</span>
+    <span>每一道光影，都是</span><span class="line-cyan">灵魂留下的痕迹。</span>
+  </div>
+  <div class="slogan-en reveal reveal-delay-1">Every frame is a silent war. Every light is a trace of soul.</div>
+  <div class="slogan-line"></div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── Contact ───────────────────────────────────────────────────────────── -->
+<section id="contact">
+  <div class="contact-grid">
+    <div class="contact-left reveal">
+      <div class="section-label" style="margin-bottom:16px;">联系我</div>
+      <h2>找到<span>ZMQ_Q</span><br>在这些地方</h2>
+      <p style="margin-top:20px;">
+        无论是项目合作、约稿邀请，还是只想聊聊游戏CG世界的那些事，欢迎随时来找我。
+        作品持续更新中，期待与你相遇。
+      </p>
+    </div>
+    <div class="contact-right reveal reveal-delay-1">
+      <div class="contact-items">
+
+        <!-- WeChat -->
+        <div class="contact-wechat">
+          <div class="contact-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M8.5 11.5C9.33 11.5 10 10.83 10 10s-.67-1.5-1.5-1.5S7 9.17 7 10s.67 1.5 1.5 1.5zm7 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5z" fill="#4fbc6f"/>
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="#4fbc6f" fill-opacity="0.4"/>
+            </svg>
+          </div>
+          <div>
+            <div class="contact-label">微信</div>
+            <div class="contact-value" style="font-family:monospace;letter-spacing:0.06em;">qi441051682</div>
+          </div>
+        </div>
+
+        <!-- Bilibili -->
+        <a class="contact-item" href="https://space.bilibili.com/138535171" target="_blank" rel="noopener">
+          <div class="contact-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="4" width="20" height="16" rx="3" stroke="#00c8d4" stroke-width="1.4"/>
+              <path d="M7 8v8M12 8v8M17 8v8" stroke="#00c8d4" stroke-width="1.2" stroke-linecap="round"/>
+              <path d="M5 2l3 2M19 2l-3 2" stroke="#00c8d4" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="contact-label">哔哩哔哩</div>
+            <div class="contact-value">space.bilibili.com/138535171</div>
+          </div>
+        </a>
+
+        <!-- zcool -->
+        <a class="contact-item" href="https://www.zcool.com.cn/u/17747176" target="_blank" rel="noopener">
+          <div class="contact-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="#c8612a" stroke-width="1.4"/>
+              <path d="M8 12a4 4 0 1 0 8 0" stroke="#c8612a" stroke-width="1.4" stroke-linecap="round"/>
+              <circle cx="12" cy="8" r="1.5" fill="#c8612a"/>
+            </svg>
+          </div>
+          <div>
+            <div class="contact-label">站酷</div>
+            <div class="contact-value">zcool.com.cn/u/17747176</div>
+          </div>
+        </a>
+
+        <!-- Xiaohongshu -->
+        <a class="contact-item" href="https://www.xiaohongshu.com/user/profile/608d5e09000000000101d601" target="_blank" rel="noopener">
+          <div class="contact-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="5" stroke="#ff4757" stroke-width="1.4"/>
+              <path d="M8 12h8M12 8v8" stroke="#ff4757" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="contact-label">小红书</div>
+            <div class="contact-value">xiaohongshu.com · @ZMQ_Q</div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Footer ────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-left">© 2025 ZMQ_Q · 游戏 CG 艺术创作</div>
+  <div class="footer-right">Made with passion &amp; pixels</div>
+</footer>
+
+<!-- ─── Scripts ───────────────────────────────────────────────────────────── -->
+<script>
+/* ── Cursor ─────────────────────────────────────────────────────────────── */
+const dot = document.getElementById('cursorDot');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animCursor() {
+  dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(animCursor);
+}
+animCursor();
+
+/* ── Nav scroll ─────────────────────────────────────────────────────────── */
+const nav = document.getElementById('mainNav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 60);
+});
+
+/* ── Reveal on scroll ───────────────────────────────────────────────────── */
+const revealEls = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+revealEls.forEach(el => observer.observe(el));
+
+/* ── Hero Canvas animation (particle fight) ─────────────────────────────── */
+(function() {
+  const canvas = document.getElementById('heroCanvas');
+  const ctx = canvas.getContext('2d');
+  const video = document.getElementById('heroVideo');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Hide canvas if video has a src and can play
+  video.addEventListener('canplay', () => { canvas.style.opacity = '0'; });
+
+  // Particles
+  const particles = [];
+  const COLORS = ['#2ab8c8','#c8612a','#8b3ab8','#50d0df','#e0844a'];
+  
+  class Particle {
+    constructor(x, y, isTrail) {
+      this.x = x || Math.random() * canvas.width;
+      this.y = y || Math.random() * canvas.height;
+      this.vx = (Math.random() - 0.5) * (isTrail ? 3 : 0.8);
+      this.vy = (Math.random() - 0.5) * (isTrail ? 3 : 0.8) - (isTrail ? 1.5 : 0);
+      this.size = isTrail ? Math.random() * 3 + 1 : Math.random() * 1.5 + 0.3;
+      this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      this.alpha = isTrail ? Math.random() * 0.8 + 0.2 : Math.random() * 0.5 + 0.1;
+      this.life = isTrail ? 1 : Math.random() * 0.5 + 0.5;
+      this.decay = isTrail ? Math.random() * 0.015 + 0.008 : 0.001;
+      this.isTrail = isTrail;
+    }
+    update() {
+      this.x += this.vx; this.y += this.vy;
+      this.life -= this.decay;
+      this.alpha = this.isTrail ? this.life * 0.85 : this.life * 0.5;
+      if (!this.isTrail) { this.vx *= 0.998; this.vy *= 0.998; }
+    }
+    draw() {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, this.alpha);
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Fighters
+  class Fighter {
+    constructor(x, side) {
+      this.x = x; this.baseX = x;
+      this.y = canvas.height * 0.52;
+      this.side = side; // 1 = right, -1 = left
+      this.phase = Math.random() * Math.PI * 2;
+      this.attackTimer = 0;
+      this.attackDur = 60;
+      this.color = side === 1 ? '#c8612a' : '#2ab8c8';
+      this.size = 22;
+    }
+    update(frame) {
+      this.phase += 0.04;
+      this.attackTimer++;
+      if (this.attackTimer > this.attackDur + Math.random() * 80) {
+        this.attackTimer = 0;
+        this.attackDur = 50 + Math.random() * 40;
+        // spawn explosion
+        const mid = canvas.width / 2;
+        for (let i = 0; i < 35; i++) particles.push(new Particle(mid, this.y, true));
+      }
+      const hover = Math.sin(this.phase) * 6;
+      const rushX = this.attackTimer < 20 ? this.side * -18 * (this.attackTimer / 20) :
+                    this.attackTimer < 35 ? this.side * -18 * (1 - (this.attackTimer - 20) / 15) : 0;
+      this.drawX = this.x + rushX;
+      this.drawY = this.y + hover;
+    }
+    draw() {
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+      // Body
+      ctx.fillStyle = '#1c2535';
+      ctx.beginPath();
+      ctx.ellipse(this.drawX, this.drawY, this.size * 0.55, this.size, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Energy aura
+      ctx.globalAlpha = 0.18;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 28;
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.ellipse(this.drawX, this.drawY, this.size * 0.7, this.size * 1.15, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Outline
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 1.2;
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.ellipse(this.drawX, this.drawY, this.size * 0.55, this.size, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      // Weapon line
+      const wDir = this.side === 1 ? -1 : 1;
+      ctx.globalAlpha = 0.85;
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.moveTo(this.drawX + wDir * this.size * 0.5, this.drawY - this.size * 0.5);
+      ctx.lineTo(this.drawX + wDir * this.size * 2.4, this.drawY - this.size * 1.8);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // Background grid
+  function drawGrid() {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(42,184,200,0.04)';
+    ctx.lineWidth = 0.5;
+    const sz = 60;
+    for (let x = 0; x < canvas.width; x += sz) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += sz) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Energy lines connecting fighters during attack
+  function drawEnergyLines(f1, f2) {
+    if (f1.attackTimer < 40 || f2.attackTimer < 40) {
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([4, 6]);
+      ctx.beginPath();
+      ctx.moveTo(f1.drawX, f1.drawY);
+      ctx.lineTo(f2.drawX, f2.drawY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
+
+  // Ambient glow orbs
+  function drawOrbs(frame) {
+    const orbs = [
+      { x: canvas.width * 0.35, y: canvas.height * 0.5, c: '#2ab8c8', r: 180 },
+      { x: canvas.width * 0.65, y: canvas.height * 0.52, c: '#c8612a', r: 160 },
+      { x: canvas.width * 0.5, y: canvas.height * 0.45, c: '#8b3ab8', r: 120 },
+    ];
+    orbs.forEach(o => {
+      const pulse = 1 + Math.sin(frame * 0.015 + o.r) * 0.08;
+      const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r * pulse);
+      g.addColorStop(0, o.c + '22');
+      g.addColorStop(1, o.c + '00');
+      ctx.save(); ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(o.x, o.y, o.r * pulse, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  const fighters = [
+    new Fighter(canvas.width * 0.34, -1),
+    new Fighter(canvas.width * 0.66, 1),
+  ];
+  let frame = 0;
+
+  // Init background particles
+  for (let i = 0; i < 120; i++) particles.push(new Particle());
+
+  function loop() {
+    frame++;
+    ctx.fillStyle = '#111318';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawGrid();
+    drawOrbs(frame);
+
+    // Update fighter X if resized
+    fighters[0].x = canvas.width * 0.34;
+    fighters[1].x = canvas.width * 0.66;
+
+    fighters.forEach(f => { f.update(frame); f.draw(); });
+    drawEnergyLines(fighters[0], fighters[1]);
+
+    // Maintain particle count
+    while (particles.length < 120) particles.push(new Particle());
+    for (let i = particles.length - 1; i >= 0; i--) {
+      particles[i].update(); particles[i].draw();
+      if (particles[i].life <= 0) particles.splice(i, 1);
+    }
+
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ── Video modal ─────────────────────────────────────────────────────────── */
+const modal = document.getElementById('videoModal');
+const modalClose = document.getElementById('modalClose');
+const modalVideo = document.getElementById('modalVideo');
+const modalPlaceholder = document.getElementById('modalPlaceholder');
+const modalTitle = document.getElementById('modalTitle');
+const modalDesc = document.getElementById('modalDesc');
+const modalInfoTitle = document.getElementById('modalInfoTitle');
+const modalInfoDesc = document.getElementById('modalInfoDesc');
+
+const videoData = {
+  1: { title: '暗影裂缝 · Shadow Rift', desc: '系列第一章·觉醒 — 深渊之中，裂缝初现，命运的齿轮开始转动。', src: '' },
+  2: { title: '烈焰协议 · Flame Protocol', desc: '系列第二章·燃烧 — 当协议失效，只剩下焰火与意志的较量。', src: '' },
+  3: { title: '虚空行者 · Void Walker', desc: '系列第三章·堕落 — 她踏入维度的缝隙，再也没有回头的路。', src: '' },
+  4: { title: '钢铁安魂 · Iron Requiem', desc: '系列第四章·终焉 — 铠甲碎裂，但意志永不消逝。', src: '' },
+  5: { title: '最后一战 · Last Stand', desc: '终章·传承 — 所有的光，在此刻汇聚。', src: '' },
+};
+
+document.querySelectorAll('.video-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const idx = card.dataset.videoIdx;
+    const d = videoData[idx];
+    modalInfoTitle.textContent = d.title;
+    modalInfoDesc.textContent = d.desc;
+    if (d.src) {
+      modalVideo.src = d.src;
+      modalVideo.style.display = 'block';
+      modalPlaceholder.style.display = 'none';
+      modalVideo.play();
+    } else {
+      modalVideo.style.display = 'none';
+      modalPlaceholder.style.display = 'flex';
+      modalTitle.textContent = d.title;
+      modalDesc.textContent = '请将视频文件放入 assets/videos/ 并更新 videoData[' + idx + '].src';
+    }
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  });
+});
+
+function closeModal() {
+  modal.classList.remove('open');
+  modalVideo.pause(); modalVideo.src = '';
+  document.body.style.overflow = '';
+}
+modalClose.addEventListener('click', closeModal);
+modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ── Parallax on scroll (hero text) ─────────────────────────────────────── */
+window.addEventListener('scroll', () => {
+  const sy = window.scrollY;
+  const heroContent = document.querySelector('.hero-content');
+  if (heroContent && sy < window.innerHeight) {
+    heroContent.style.transform = `translateY(${sy * 0.28}px)`;
+    heroContent.style.opacity = 1 - sy / (window.innerHeight * 0.6);
+  }
+});
+
+/* ── Smooth section indicator ─────────────────────────────────────────────── */
+const sections = ['#works','#videos','#slogan','#contact'];
+const navLinks = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(id => {
+    const el = document.querySelector(id);
+    if (el && window.scrollY >= el.offsetTop - 200) cur = id;
+  });
+  navLinks.forEach(a => {
+    a.style.color = a.getAttribute('href') === cur ? 'var(--clr-cyan)' : '';
+  });
+});
+</script>
+</body>
+</html>
