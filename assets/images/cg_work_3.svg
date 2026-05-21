@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="800" height="520">
+  <defs>
+    <radialGradient id="bg3" cx="40%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0f1820"/>
+      <stop offset="100%" stop-color="#060c10"/>
+    </radialGradient>
+    <radialGradient id="dragonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d4622a" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#d4622a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="iceGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00c8d4" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#00c8d4" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow3">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <filter id="glow3s">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+  <rect width="800" height="520" fill="url(#bg3)"/>
+
+  <!-- Background dragon shape -->
+  <g fill="#0a1218" stroke="#d4622a" stroke-opacity="0.2" stroke-width="0.5">
+    <!-- Dragon body (large background) -->
+    <ellipse cx="580" cy="280" rx="180" ry="100" fill="#0d1822" stroke-opacity="0.15"/>
+    <!-- Dragon head -->
+    <polygon points="680,160 740,200 720,240 660,230 640,180" fill="#0d1822" stroke="#d4622a" stroke-opacity="0.25"/>
+    <!-- Dragon wing -->
+    <polygon points="600,180 750,100 780,200 650,240" fill="#0c1620" stroke="#d4622a" stroke-opacity="0.2"/>
+    <polygon points="560,200 480,80 530,180" fill="#0c1620" stroke="#d4622a" stroke-opacity="0.15"/>
+  </g>
+
+  <!-- Dragon fire glow -->
+  <ellipse cx="680" cy="210" rx="80" ry="60" fill="url(#dragonGlow)" filter="url(#glow3)"/>
+
+  <!-- Knight armor silhouette -->
+  <!-- Legs -->
+  <g fill="#1c2530">
+    <rect x="348" y="410" width="28" height="80" rx="4" fill="#18222c"/>
+    <rect x="384" y="410" width="28" height="80" rx="4" fill="#18222c"/>
+    <!-- Boot spurs -->
+    <polygon points="346,480 340,490 360,490 360,480" fill="#242f3a"/>
+    <polygon points="412,480 410,490 430,490 424,480" fill="#242f3a"/>
+  </g>
+
+  <!-- Main armor body -->
+  <g fill="#1c2530" stroke="#00c8d4" stroke-opacity="0.3" stroke-width="0.7">
+    <!-- torso -->
+    <rect x="330" y="260" width="120" height="155" rx="6" fill="#1c2530"/>
+    <!-- pauldrons (shoulder armor) -->
+    <path d="M330,265 Q280,255 268,295 Q278,315 330,305 Z" fill="#202c38"/>
+    <path d="M450,265 Q500,255 512,295 Q502,315 450,305 Z" fill="#202c38"/>
+    <!-- chest plates -->
+    <polygon points="340,270 440,270 450,320 330,320" fill="#222e3c" stroke-opacity="0.5"/>
+    <!-- abs plates -->
+    <rect x="340" y="328" width="48" height="22" rx="2" fill="#1e2a36" stroke-opacity="0.4"/>
+    <rect x="394" y="328" width="48" height="22" rx="2" fill="#1e2a36" stroke-opacity="0.4"/>
+    <rect x="340" y="356" width="48" height="22" rx="2" fill="#1e2a36" stroke-opacity="0.3"/>
+    <rect x="394" y="356" width="48" height="22" rx="2" fill="#1e2a36" stroke-opacity="0.3"/>
+  </g>
+
+  <!-- Helmet -->
+  <g fill="#1c2530">
+    <rect x="358" y="200" width="64" height="65" rx="8" fill="#1e2a36"/>
+    <!-- visor T-shape -->
+    <rect x="362" y="220" width="56" height="12" rx="3" fill="#0a1420" stroke="#00c8d4" stroke-width="0.8" stroke-opacity="0.7"/>
+    <!-- crown ridge -->
+    <rect x="376" y="196" width="8" height="16" rx="2" fill="#2a3848"/>
+    <rect x="392" y="192" width="10" height="20" rx="2" fill="#2a3848"/>
+    <rect x="408" y="196" width="8" height="16" rx="2" fill="#2a3848"/>
+  </g>
+
+  <!-- Ice lance - right arm -->
+  <g>
+    <rect x="452" y="285" width="16" height="80" rx="5" fill="#1e2a36" stroke="#00c8d4" stroke-opacity="0.3" stroke-width="0.5"/>
+    <!-- lance shaft -->
+    <rect x="457" y="355" width="6" height="40" rx="2" fill="#1a2030"/>
+    <!-- lance head -->
+    <polygon points="460,180 448,340 472,340" fill="#00c8d4" fill-opacity="0.7" stroke="#00c8d4" stroke-width="0.5"/>
+    <polygon points="460,180 454,310 466,310" fill="#80e8f0" fill-opacity="0.3"/>
+    <!-- lance glow -->
+    <polygon points="460,180 444,330 476,330" fill="#00c8d4" fill-opacity="0.08" filter="url(#glow3s)"/>
+  </g>
+
+  <!-- Dragon orange eye -->
+  <ellipse cx="710" cy="188" rx="8" ry="6" fill="#d4622a" opacity="0.9"/>
+  <ellipse cx="710" cy="188" rx="14" ry="10" fill="#d4622a" opacity="0.2" filter="url(#glow3s)"/>
+  <!-- Dragon nostril fire -->
+  <path d="M728,208 Q740,220 730,235 Q720,230 728,208" fill="#d4622a" fill-opacity="0.5"/>
+  <path d="M728,208 Q742,222 734,240 Q722,234 728,208" fill="#ff6020" fill-opacity="0.2" filter="url(#glow3s)"/>
+
+  <!-- Shield left arm -->
+  <g fill="#1c2530" stroke="#00c8d4" stroke-opacity="0.4">
+    <rect x="292" y="290" width="16" height="70" rx="5" fill="#1e2a36"/>
+    <!-- shield body -->
+    <path d="M240,295 Q268,280 298,295 L298,375 Q268,395 240,375 Z" fill="#1c2838" stroke-width="0.8"/>
+    <!-- shield emblem -->
+    <circle cx="269" cy="335" r="18" fill="none" stroke="#00c8d4" stroke-opacity="0.5" stroke-width="0.7"/>
+    <polygon points="269,322 278,332 274,346 264,346 260,332" fill="#00c8d4" fill-opacity="0.2" stroke-opacity="0.7"/>
+  </g>
+
+  <!-- Metal sheen lines on armor -->
+  <g stroke="#00c8d4" stroke-opacity="0.2" stroke-width="0.5" fill="none">
+    <line x1="340" y1="270" x2="355" y2="415"/>
+    <line x1="440" y1="270" x2="425" y2="415"/>
+    <line x1="330" y1="310" x2="450" y2="310"/>
+  </g>
+
+  <!-- Ice particles -->
+  <g fill="#00c8d4">
+    <polygon points="140,200 146,216 132,216" opacity="0.6"/>
+    <polygon points="180,160 184,172 176,172" opacity="0.5"/>
+    <polygon points="160,280 168,296 152,296" opacity="0.4"/>
+    <polygon points="600,150 606,163 594,163" opacity="0.3"/>
+  </g>
+
+  <text x="400" y="70" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#00c8d4" fill-opacity="0.5" letter-spacing="6">I R O N  &amp;  D R A G O N</text>
+  <text x="400" y="496" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#888" letter-spacing="3">Z M Q _ Q  ·  2 0 2 5</text>
+</svg>
