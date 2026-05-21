@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 380" width="640" height="380">
+  <defs>
+    <radialGradient id="vbg5" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#1a0c08"/>
+      <stop offset="100%" stop-color="#0d0605"/>
+    </radialGradient>
+    <radialGradient id="vglow5" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d4622a" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#d4622a" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="vblur5">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+  <rect width="640" height="380" fill="url(#vbg5)"/>
+  <rect width="640" height="380" fill="url(#vglow5)" filter="url(#vblur5)"/>
+  <!-- Cinematic bars -->
+  <rect width="640" height="36" fill="#000" fill-opacity="0.7"/>
+  <rect y="344" width="640" height="36" fill="#000" fill-opacity="0.7"/>
+  <!-- Scene lines -->
+  <g stroke="#d4622a" stroke-opacity="0.15" stroke-width="0.6" fill="none">
+    <line x1="0" y1="100" x2="640" y2="100"/>
+    <line x1="0" y1="280" x2="640" y2="280"/>
+    <line x1="160" y1="36" x2="160" y2="344"/>
+    <line x1="480" y1="36" x2="480" y2="344"/>
+  </g>
+  <!-- Center action area -->
+  <rect x="160" y="100" width="320" height="180" fill="#d4622a" fill-opacity="0.05" rx="4"/>
+  <!-- Action silhouette placeholder lines -->
+  <g stroke="#d4622a" stroke-opacity="0.4" stroke-width="1" fill="none">
+    <ellipse cx="320" cy="200" rx="60" ry="80"/>
+    <ellipse cx="320" cy="180" rx="22" ry="26"/>
+    <line x1="320" y1="260" x2="308" y2="310"/>
+    <line x1="320" y1="260" x2="332" y2="310"/>
+    <line x1="320" y1="200" x2="270" y2="240"/>
+    <line x1="320" y1="200" x2="380" y2="230"/>
+  </g>
+  <!-- Energy effect -->
+  <ellipse cx="320" cy="200" rx="90" ry="90" fill="#8b3ab8" fill-opacity="0.07" filter="url(#vblur5)"/>
+  <!-- Play button overlay -->
+  <circle cx="320" cy="190" r="26" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1"/>
+  <polygon points="313,180 313,200 332,190" fill="#ffffff" fill-opacity="0.6"/>
+  <!-- Dynamic lines radiating -->
+  <g stroke="#d4622a" stroke-opacity="0.25" stroke-width="0.7" fill="none">
+    <line x1="320" y1="100" x2="240" y2="36"/>
+    <line x1="320" y1="100" x2="320" y2="36"/>
+    <line x1="320" y1="100" x2="400" y2="36"/>
+    <line x1="320" y1="280" x2="240" y2="344"/>
+    <line x1="320" y1="280" x2="400" y2="344"/>
+  </g>
+  <!-- Title -->
+  <text x="320" y="348" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#d4622a" fill-opacity="0.8" letter-spacing="4">LAST  STAND</text>
+  <!-- Subtitle -->
+  <text x="320" y="60" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#aaa" letter-spacing="3">Finale — The Legacy</text>
+  <!-- Corner marks -->
+  <g stroke="#d4622a" stroke-opacity="0.5" stroke-width="1" fill="none">
+    <path d="M168,44 L168,52 L176,52"/>
+    <path d="M472,44 L472,52 L464,52"/>
+    <path d="M168,336 L168,328 L176,328"/>
+    <path d="M472,336 L472,328 L464,328"/>
+  </g>
+  <text x="580" y="60" text-anchor="end" font-family="monospace" font-size="8" fill="#d4622a" fill-opacity="0.4">ZMQ_Q</text>
+</svg>
